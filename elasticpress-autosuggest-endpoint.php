@@ -19,6 +19,8 @@ require 'vendor/autoload.php';
  * Init Elasticsearch PHP Client
  */
 use Elasticsearch\ClientBuilder;
+use ElasticPress\Indexables as Indexables;
+use ElasticPress\Utils;
 
 /**
  * Register Elasticpress Autosuggest Endpoint
@@ -36,22 +38,28 @@ add_action( 'rest_api_init', function() {
 /**
  * Elasticpress Autosuggest Endpoint Callback
  *
- * gets host and index name dynamically. Otherwise,
+* gets host and index name dynamically. Otherwise,
  * if not specified, host would default to localhost:9200
  * and index name would default to 'index'
  *
  * @param \WP_REST_Request $data
  * @return array|callable
  */
-function ep_autosuggest( \WP_REST_Request $data ) {
-    $client = ClientBuilder::create();
-    $client->setHosts([ep_get_host()]); // get host dynamically
-    $client = $client->build();
-    $params = [
-        'index' => ep_get_index_name(), // get index dynamically
-        'type' => 'post',
-        'body' => $data->get_body()
-    ];
-    $response = $client->search( $params );
-    return $response;
+function ep_autosuggest( \WP_REST_Request $data ){
+
+$client = ClientBuilder::create();
+$client->setHosts( [ElasticPress\Utils\get_host()] ); // get host dynamically
+$client = $client->build();	
+		
+$json_params = $data->get_json_params();
+
+$params = [
+		'index' => Indexables::factory()->get( 'post' )->get_index_name(), // get index dynamically
+		'type' => 'post',
+		'body' => $json_params
+		];
+
+$response = $client->search( $params );
+
+return $response;
 }
